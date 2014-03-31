@@ -6,8 +6,6 @@ import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 
-import com.lucabellon.hartman.R;
-
 import android.app.Activity;
 import android.app.AlertDialog;
 import android.content.ContentResolver;
@@ -22,7 +20,7 @@ import android.net.Uri;
 import android.os.Bundle;
 import android.os.Environment;
 import android.provider.MediaStore;
-import android.view.Display;
+import android.util.DisplayMetrics;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.MenuItem.OnMenuItemClickListener;
@@ -34,23 +32,14 @@ import android.widget.ArrayAdapter;
 import android.widget.ListView;
 import android.widget.Toast;
 
-public class SergenteHartmanActivity extends Activity implements
-		OnItemClickListener, OnItemLongClickListener, OnClickListener,
+public class SergenteHartmanActivity extends Activity implements OnItemClickListener, OnItemLongClickListener, OnClickListener,
 		OnMenuItemClickListener {
 
-	private static final String[] ITEMS = new String[] {
-			"Io sono il sergente maggiore Hartman!",
-			"Come ti chiami faccia di merda?", "Chi ha parlato?",
-			"Abbiamo tra noi un attore comico..", "Si si tu mi piaci!",
-			"Brutto sacco di merda, io ti metto sotto!",
-			"Tu non riderai, tu non piangerai...",
-			"Datti subito una regolata amico mio...",
-			"Io dico che la parte migliore dello schizzo...",
-			"Io ho sempre saputo che nel texas...", "Tu succhi i cazzi?",
-			"Scommetto che sei uno di quegli ingrati...",
-			"I tuoi genitori hanno anche figli normali?",
-			"Ho deciso di darti tre secondi...",
-			"E' meglio che metti il culo in carreggiata...",
+	private static final String[] ITEMS = new String[] { "Io sono il sergente maggiore Hartman!", "Come ti chiami faccia di merda?",
+			"Chi ha parlato?", "Abbiamo tra noi un attore comico..", "Si si tu mi piaci!", "Brutto sacco di merda, io ti metto sotto!",
+			"Tu non riderai, tu non piangerai...", "Datti subito una regolata amico mio...", "Io dico che la parte migliore dello schizzo...",
+			"Io ho sempre saputo che nel texas...", "Tu succhi i cazzi?", "Scommetto che sei uno di quegli ingrati...",
+			"I tuoi genitori hanno anche figli normali?", "Ho deciso di darti tre secondi...", "E' meglio che metti il culo in carreggiata...",
 			"I bei tempi dei ditalini...", "Sei proprio tu John Wayne?" };
 
 	private MediaPlayer player = null;
@@ -81,17 +70,21 @@ public class SergenteHartmanActivity extends Activity implements
 		setContentView(R.layout.main);
 		context = this;
 
-		Display getOrient = getWindowManager().getDefaultDisplay();
-		int orientation = getOrient.getOrientation();
 		View mainLayout = findViewById(R.id.layout);
-		if (orientation == 1)
+
+		DisplayMetrics displaymetrics = new DisplayMetrics();
+		getWindowManager().getDefaultDisplay().getMetrics(displaymetrics);
+		int height = displaymetrics.heightPixels;
+		int width = displaymetrics.widthPixels;
+
+		if (width > height) {
 			mainLayout.setBackgroundResource(R.raw.landscape);
-		else
+		} else {
 			mainLayout.setBackgroundResource(R.raw.portrait);
+		}
 
 		ListView l = (ListView) findViewById(R.id.listView);
-		ArrayAdapter<String> adapter = new ArrayAdapter<String>(this,
-				android.R.layout.simple_list_item_1, ITEMS);
+		ArrayAdapter<String> adapter = new ArrayAdapter<String>(this, android.R.layout.simple_list_item_1, ITEMS);
 		l.setAdapter(adapter);
 		l.setOnItemClickListener(this);
 		l.setOnItemLongClickListener(this);
@@ -121,8 +114,7 @@ public class SergenteHartmanActivity extends Activity implements
 
 		File newSoundFile = new File(dir, "hartman_" + type + ".mp3");
 
-		Uri mUri = Uri.parse("android.resource://com.lucabellon.hartman/"
-				+ resId);
+		Uri mUri = Uri.parse("android.resource://com.lucabellon.hartman/" + resId);
 
 		ContentResolver mCr = context.getContentResolver();
 		AssetFileDescriptor soundFile;
@@ -161,20 +153,28 @@ public class SergenteHartmanActivity extends Activity implements
 		values.put(MediaStore.Audio.Media.IS_ALARM, true);
 		values.put(MediaStore.Audio.Media.IS_MUSIC, false);
 
-		Uri uri = MediaStore.Audio.Media.getContentUriForPath(newSoundFile
-				.getAbsolutePath());
+		Uri uri = MediaStore.Audio.Media.getContentUriForPath(newSoundFile.getAbsolutePath());
 
 		Uri newUri = mCr.insert(uri, values);
 
 		try {
-			RingtoneManager.setActualDefaultRingtoneUri(getBaseContext(), type,
-					newUri);						
-			
-			Toast.makeText(context, "Suoneria impostata", Toast.LENGTH_SHORT)
-					.show();
-
+			RingtoneManager.setActualDefaultRingtoneUri(getBaseContext(), type, newUri);
+			Toast.makeText(context, "Suoneria impostata.", Toast.LENGTH_SHORT).show();
 		} catch (Throwable t) {
 		}
+	}
+
+	private void DeleteRingtone(int resId, int type) {
+		File sdcard = Environment.getExternalStorageDirectory();
+		File dir = new File(sdcard.getAbsolutePath() + "/media/ringtone");
+		File soundFile = new File(dir, "hartman_" + type + ".mp3");
+		ContentResolver mCr = context.getContentResolver();
+		Uri mUri = MediaStore.Audio.Media.getContentUriForPath(soundFile.getAbsolutePath());
+		ContentValues cv = new ContentValues();
+		cv.put(MediaStore.Audio.Media.IS_RINGTONE, false);
+		cv.put(MediaStore.Audio.Media.IS_NOTIFICATION, false);
+		mCr.delete(mUri, MediaStore.MediaColumns.DATA + "=\"" + soundFile.getAbsolutePath() + "\"", null);
+		Toast.makeText(context, "Suoneria rimossa.", Toast.LENGTH_SHORT).show();
 	}
 
 	private int GetResByPos(int position) {
@@ -219,8 +219,7 @@ public class SergenteHartmanActivity extends Activity implements
 	}
 
 	@Override
-	public void onItemClick(AdapterView<?> parent, View view, int position,
-			long id) {
+	public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
 		if (parent.getId() == R.id.listView) {
 
 			if (isLongPressed) {
@@ -233,8 +232,7 @@ public class SergenteHartmanActivity extends Activity implements
 	}
 
 	@Override
-	public boolean onItemLongClick(AdapterView<?> parent, View view,
-			int position, long id) {
+	public boolean onItemLongClick(AdapterView<?> parent, View view, int position, long id) {
 
 		if (parent.getId() == R.id.listView) {
 
@@ -242,8 +240,8 @@ public class SergenteHartmanActivity extends Activity implements
 
 			ringtone = GetResByPos(position);
 
-			final CharSequence[] items = { "Imposta suoneria telefono",
-					"Imposta suoneria notifica" };
+			final CharSequence[] items = { "Imposta suoneria telefono", "Imposta suoneria notifica", "Rimuovi da suonerie telefono",
+					"Rimuovi da suonerie notifiche" };
 
 			AlertDialog.Builder builder = new AlertDialog.Builder(this);
 			builder.setTitle("Opzioni");
@@ -261,6 +259,10 @@ public class SergenteHartmanActivity extends Activity implements
 			SetRingtone(ringtone, RingtoneManager.TYPE_RINGTONE);
 		else if (which == 1)
 			SetRingtone(ringtone, RingtoneManager.TYPE_NOTIFICATION);
+		else if (which == 2)
+			DeleteRingtone(ringtone, RingtoneManager.TYPE_RINGTONE);
+		else if (which == 3)
+			DeleteRingtone(ringtone, RingtoneManager.TYPE_NOTIFICATION);
 	}
 
 	@Override
@@ -271,10 +273,9 @@ public class SergenteHartmanActivity extends Activity implements
 
 	@Override
 	public boolean onMenuItemClick(MenuItem i) {
-		if (i.getTitle() == "Info") {			
-			String info = "Grazie per aver scaricato l'app del Sergente Hartman!\r\n\r\nPer impostare una frase come suoneria, premi più a lungo sulla frase interessata.\r\n\r\nPuoi inoltre suggerire l'inserimento di altre frasi inviando un' email allo sviluppatore.";
-			new AlertDialog.Builder(this).setTitle("Informazioni").setMessage(info)
-					.setNeutralButton("Chiudi", null).show();
+		if (i.getTitle() == "Info") {
+			String info = "Grazie per aver scaricato l'app del Sergente Hartman!\r\n\r\nPer impostare una frase come suoneria, premi più a lungo sulla frase interessata.";
+			new AlertDialog.Builder(this).setTitle("Informazioni").setMessage(info).setNeutralButton("Chiudi", null).show();
 		}
 		return false;
 	}
